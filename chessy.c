@@ -126,8 +126,8 @@ struct piece* initBoard()
 	      piece->numPieces = numPieces;
 	      piece->startPos = pos;
 	      piece->currPos = pos;
-	      *piece->moves = *piecesA[idx].moves;
-              //memcpy(piece->moves,&piecesA[idx].moves,sizeof(piecesA[idx].moves));
+	      //*piece->moves = *piecesA[idx].moves;
+              memcpy(piece->moves,&piecesA[idx].moves,sizeof(piecesA[idx].moves));
 	      //printf("piece->moves[0].rowChange:\t%d\n",piece->moves[0]->rowChange);
 	      board[idx] = *piece;
 	      //printf("board[%d].name\t%s\n", idx,board[idx].name);
