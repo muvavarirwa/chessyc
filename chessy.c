@@ -35,7 +35,7 @@ struct move emptyMoves[2]  = {0,0,0,0};
 struct move *moves[NUM_PIECES] = {pawnMoves, rookMoves, knightMoves, bishopMoves, queenMoves, kingMoves, emptyMoves}; 
 
 //embarassing hack....tired;)
-int numMoves[NUM_PIECES] = {6,8,8,8,16,16,2};
+int numMoves[NUM_PIECES] = {3,3,6,4,16,16,2};
 
 struct piece {
     char name[NAME_SIZE];
