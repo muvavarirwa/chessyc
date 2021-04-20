@@ -176,7 +176,7 @@ int main()
 	    int idx = board[i].idx;
 	    struct move *feasMoves = getFeasibleMoves(&board[i]);
 	    printf("---------------%s-------------------\n",board[i].name);
-            for (int k=0; k<numMoves[idx]/2; k++){
+            for (int k=0; k<numMoves[idx]; k++){
                 printf("move[%d]:\t{%d,%d}\t",k,feasMoves[k].rowChange,feasMoves[k].colChange);
 	    }
 	    printf("\n");
