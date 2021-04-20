@@ -24,15 +24,18 @@ struct move {
     int colChange;
 };
 
-struct move pawnMoves[6]   = {1,1,1,-1,1,0,-1,-1,-1,1,-1,0};
-struct move rookMoves[8]   = {1,0,0,1,0,-1,-1,0,1,0,0,1,0,-1,-1,0};
-struct move knightMoves[8] = {1,2,2,1,1,-2,-2,1,1,2,2,1,1,-2,-2,1};
-struct move bishopMoves[8] = {1,1,1,-1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,-1};
-struct move queenMoves[16]  = {1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1,1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1};
-struct move kingMoves[16]   = {1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1,1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1};
+struct move pawnMoves[3]   = {1,1,1,-1,1,0};
+struct move rookMoves[3]   = {1,0,0,1,0,-1};
+struct move knightMoves[6] = {1,2,2,1,1,-2,-2,1,-1,-2,-1,2};
+struct move bishopMoves[4] = {1,1,1,-1,-1,1,-1,-1};
+struct move queenMoves[16] = {1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1,1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1};
+struct move kingMoves[16]  = {1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1,1,1,1,-1,-1,1,-1,-1,1,0,0,1,-1,0,0,-1};
 struct move emptyMoves[2]  = {0,0,0,0};
 
 struct move *moves[NUM_PIECES] = {pawnMoves, rookMoves, knightMoves, bishopMoves, queenMoves, kingMoves, emptyMoves}; 
+
+//embarassing hack....tired;)
+int numMoves[NUM_PIECES] = {6,8,8,8,16,16,2};
 
 struct piece {
     char name[NAME_SIZE];
@@ -124,7 +127,13 @@ struct piece* initBoard()
 	      }
 	      strcat(board[idx].name,pieces[i].name);
 	      strcat(board[idx].name,buffer);
-	      board[idx].side = pieces[i].side;
+	      board[idx].idx = i;
+	      if (idx < 16)
+	          board[idx].side = 0;
+	      else if (idx > 47)
+		  board[idx].side = 1;
+	      else
+		  board[idx].side = -1;
 	      board[idx].numPieces = numPieces;
 	      board[idx].startPos = pos;
 	      board[idx].currPos = pos;
@@ -135,29 +144,22 @@ struct piece* initBoard()
     return board;
 }
 
-struct move getFeasibleMoves(struct piece *piece)
+struct move *getFeasibleMoves(struct piece *piece)
 {
     struct move *candidateMoves = moves[piece->idx];
 
-    printf("Piece_idx:\t%d\n",piece->idx);
+    int num_moves = (int) numMoves[piece->idx];
 
-    int numMoves = (int) (sizeof(candidateMoves)/sizeof(struct move))/2;
+    int flag = (piece->side == 1) ? -1 : 1;
 
-    int offset = (piece->side) ? numMoves : 0;
-
-    struct move *feasibleMoves = (struct move *) calloc(MAX_MOVES,sizeof(struct move));
+    struct move *feasibleMoves = (struct move *) calloc(num_moves,sizeof(struct move));
     
-    printf("--------------------------------------------------\n");
-    printf("Piece: %s\tSide: %d\tnumMoves: %d\toffset: %d\n",piece->name,piece->side,numMoves,offset);
-    printf("sizeof(candidateMoves):\t%ld\n",sizeof(candidateMoves));
-
-    for (int i=0; i<4; i++)
+    for (int i=0; i<num_moves; i++)
     {
-        printf("{%d,%d}\n",candidateMoves[i].rowChange,candidateMoves[i].colChange);
-	feasibleMoves[i] = (struct move) {candidateMoves[i].rowChange,candidateMoves[i].colChange};
+	feasibleMoves[i] = (struct move) {flag*candidateMoves[i].rowChange,flag*candidateMoves[i].colChange};
     }
 
-    return *feasibleMoves;
+    return feasibleMoves;
 }
 
 
@@ -170,8 +172,14 @@ int main()
     for (int i=0; i<BOARD_SIZE; i++)
     {
         if (board[i].side!=EMPTY_FLAG){
-            //printf("{%s,%d,%d,{%d,%d},{%d,%d})\n",board[i].name,board[i].side,board[i].numPieces,board[i].startPos.row,board[i].startPos.col,board[i].currPos.row,board[i].currPos.col);
-	    struct move feasMoves = getFeasibleMoves(&board[i]);
+            //printf("{%s,idx: %d,%d,%d,{%d,%d},{%d,%d})\n",board[i].name,board[i].idx,board[i].side,board[i].numPieces,board[i].startPos.row,board[i].startPos.col,board[i].currPos.row,board[i].currPos.col);
+	    int idx = board[i].idx;
+	    struct move *feasMoves = getFeasibleMoves(&board[i]);
+	    printf("---------------%s-------------------\n",board[i].name);
+            for (int k=0; k<numMoves[idx]/2; k++){
+                printf("move[%d]:\t{%d,%d}\t",k,feasMoves[k].rowChange,feasMoves[k].colChange);
+	    }
+	    printf("\n");
         }
     }
 }
