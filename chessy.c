@@ -184,35 +184,40 @@ struct feasibleMoves *getFeasibleMoves(struct piece *board,int i,int idx)
                 if (piece.side == 0){
 		    fMovePtr = feasibleMoves->side0 + i;
 		    memcpy(fMovePtr,&fMove, sizeof(fMove));
-		    printf("SIDE0\t{%d,%d}\t=====>\t{%d,%d}\n",feasibleMoves->side0[i].currPos.row,feasibleMoves->side0[i].currPos.col,feasibleMoves->side0[i].nextPos.row,feasibleMoves->side0[i].nextPos.col);
+		    //printf("SIDE: {0}\t{%d,%d}\t=====>\t{%d,%d}\n",feasibleMoves->side0[i].currPos.row,feasibleMoves->side0[i].currPos.col,feasibleMoves->side0[i].nextPos.row,feasibleMoves->side0[i].nextPos.col);
 		}
 	        else { 
 		    fMovePtr = feasibleMoves->side1 + i;
 		    memcpy(fMovePtr,&fMove, sizeof(fMove));
-		    printf("SIDE1\t{%d,%d}\t=====>\t{%d,%d}\n",feasibleMoves->side1[i].currPos.row,feasibleMoves->side1[i].currPos.col,feasibleMoves->side1[i].nextPos.row,feasibleMoves->side1[i].nextPos.col);
+		    //printf("SIDE: {1}\t{%d,%d}\t=====>\t{%d,%d}\n",feasibleMoves->side1[i].currPos.row,feasibleMoves->side1[i].currPos.col,feasibleMoves->side1[i].nextPos.row,feasibleMoves->side1[i].nextPos.col);
 		}
             }
-    }
-   
+    } 
+
     return feasibleMoves;
 }
 
 struct feasibleMoves *getAllFeasibleMoves(struct piece *board)
 {
+    struct feasibleMove fMovePtr;
+    struct feasibleMoves *fMovesPtr;
+
     for (int i=0; i<BOARD_SIZE; i++)
     {
 	int idx = board[i].idx;
 	if (board[i].side != -1){
-	    struct feasibleMoves *fMovesPtr = getFeasibleMoves(board,i,idx);
-	    if (board[i].side == 0)
-	        printf("idx:\t%d\tside:\t%d\tcurrPos:\t{%d,%d}\tnextPos:\t{%d,%d}\n",i, board[i].side,(fMovesPtr->side0)[i].currPos.row,(fMovesPtr->side0)[i].currPos.col,(fMovesPtr->side0)[i].nextPos.row,(fMovesPtr->side0)[i].nextPos.col);
-	    else
-		printf("idx:\t%d\tside:\t%d\tcurrPos:\t{%d,%d}\tnextPos:\t{%d,%d}\n",i, board[i].side,(fMovesPtr->side1+i)->currPos.row,(fMovesPtr->side1+i)->currPos.col,(fMovesPtr->side1+i)->nextPos.row,(fMovesPtr->side1+i)->nextPos.col);
-
+	   fMovesPtr = getFeasibleMoves(board,i,idx);
+	   //printf("--------------------------------------------------------------------\n");
+	   for (int k=0; k<20; k++){
+           fMovePtr = (board[i].side == 0) ? fMovesPtr->side0[k] : fMovesPtr->side1[k];	 
+	   if (fMovePtr.currPos.row != fMovePtr.nextPos.row && fMovePtr.currPos.col != fMovePtr.nextPos.col)
+	       printf("SIDE: [%d]\t{%d,%d}   =====> {%d,%d}\n",board[i].side, fMovePtr.currPos.row, fMovePtr.currPos.col, fMovePtr.nextPos.row, fMovePtr.nextPos.col);   
+	   }
+	   //printf("--------------------------------------------------------------------\n");
            }
-    }
+       }
 
-    //return fMovesPtr;
+    return fMovesPtr;
 }
 
 int main()
