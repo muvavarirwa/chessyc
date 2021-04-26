@@ -123,7 +123,7 @@ struct piece* initBoard()
 
            for (int j=0; j<numPieces; j++)
 	   {
-	      struct pos pos;
+	      struct pos pos = {0};
 	      pos = getPos(pos, side, i, j, numPieces);
 	      int idx = getBoardIdx(pos); 
 	      char buffer[2] = "";
@@ -143,18 +143,18 @@ struct piece* initBoard()
 	      board[idx].numPieces = numPieces;
 	      board[idx].startPos = pos;
 	      board[idx].currPos = pos;
+
 	      }
 	   }
 	}
     return board;
 }
 
-struct feasibleMoves *getFeasibleMoves(struct piece *board,int i,int idx)
+struct feasibleMoves *getFeasibleMoves(struct piece *board,struct feasibleMoves *feasibleMoves, int b,int idx)
 {
-    struct piece piece = board[i];
+    struct piece piece = board[b];
     struct move *candidateMoves = moves[piece.idx];
     int num_moves = (int) numMoves[piece.idx];
-    struct feasibleMoves *feasibleMoves = (struct feasibleMoves *) malloc(2*num_moves*sizeof(struct feasibleMove));
     struct feasibleMove *fMovePtr = (piece.side == 0) ? feasibleMoves->side0 : feasibleMoves->side1;
     struct feasibleMove pieceMoves[num_moves];
 
@@ -172,38 +172,36 @@ struct feasibleMoves *getFeasibleMoves(struct piece *board,int i,int idx)
 	   break;
         }
     
-    printf("fMovePtr original address:\t%p\n",&fMovePtr);
-
     for (int i=0; i<num_moves; i++)
     {
 	struct pos currPos = piece.currPos;
 	struct move move = (struct move) {flag*candidateMoves[i].rowChange,flag*candidateMoves[i].colChange};
-	struct pos nextPos = (struct pos) {currPos.row+move.rowChange,currPos.col+move.colChange};
+	struct pos np = (struct pos) {currPos.row+move.rowChange,currPos.col+move.colChange};
+	struct pos nextPos = (currPos.row+move.rowChange >=0 &&
+			currPos.row+move.rowChange <=8 &&
+			currPos.col+move.colChange >=0 &&
+		        currPos.col+move.colChange <=8 &&
+			currPos.col+move.colChange != currPos.col &&
+			currPos.row+move.rowChange != currPos.row &&
+			board[b].side != board[getBoardIdx(np)].side) ? (struct pos) {currPos.row+move.rowChange,currPos.col+move.colChange} : (struct pos) {0,0};
+
 	struct feasibleMove fMove = (struct feasibleMove) {currPos,nextPos};
+	
 	int nextIdx = (int) nextPos.row*8 + nextPos.col;
 	if (nextPos.row >= 0 && nextPos.row < 8 && nextPos.col >= 0 && nextPos.col < 8) 
 	    if (board[nextIdx].side != piece.side && nextPos.row  != currPos.row && nextPos.col != currPos.col && move.rowChange != 0 && move.colChange != 0 ){
                 pieceMoves[i] = fMove;
-		//printf("{%d,%d} \t{%d,%d}\n",pieceMoves[i].currPos.row,pieceMoves[i].currPos.col,pieceMoves[i].nextPos.row, pieceMoves[i].nextPos.col);
+		memcpy(feasibleMoves->side0,&pieceMoves[i],sizeof(struct feasibleMove));
 		}
-    } 
-    
-    if (piece.side==0)
-    {
-	memcpy(feasibleMoves->side0,pieceMoves,sizeof(pieceMoves));
-        for (int i=0;i<num_moves;i++)
-	{
-	   printf("{%d,%d} \t{%d,%d}\n",feasibleMoves->side0[i].currPos.row,feasibleMoves->side0[i].currPos.col,feasibleMoves->side0[i].nextPos.row, feasibleMoves->side0[i].nextPos.col);
-	}
-    }
-    else {
-	memcpy(feasibleMoves->side1,pieceMoves,sizeof(pieceMoves));
-               for (int m=0;m<num_moves;m++)
-        {
-           printf("{%d,%d} \t{%d,%d}\n",feasibleMoves->side1[i].currPos.row,feasibleMoves->side1[i].currPos.col,feasibleMoves->side1[i].nextPos.row, feasibleMoves->side1[i].nextPos.col);
-        }
+	    else {
+	        pieceMoves[i] = (struct feasibleMove) {0,0,0,0};
+	    }
+
+	printf("PIECEMOVES[%d]:\t\t{%d,%d}\t\t{%d,%d}\n",i,pieceMoves[i].currPos.row,pieceMoves[i].currPos.col, pieceMoves[i].nextPos.row, pieceMoves[i].nextPos.col);
     }
 
+    printf("number of feasible moves:\t%ld\n",sizeof(pieceMoves)/sizeof(struct feasibleMove));
+    
     return feasibleMoves;
 }
 
@@ -211,28 +209,36 @@ struct feasibleMove *getAllFeasibleMoves(struct piece *board)
 {
     struct feasibleMove fMovePtr;
     struct feasibleMoves *fMovesPtr;
-    struct feasibleMove *allFeasibleMoves = (struct feasibleMove *) calloc(2*MAX_MOVES,sizeof(struct feasibleMove));
-    struct feasibleMove feasMoves[2*MAX_MOVES];
+    struct feasibleMove *allFeasibleMoves = (struct feasibleMove *) calloc(MAX_MOVES,sizeof(struct feasibleMove));
+    struct feasibleMove feasMoves[MAX_MOVES];
     struct feasibleMove feasMove;
 
     for (int i=0; i<BOARD_SIZE; i++)
     {
 	int idx = board[i].idx;
 	if (board[i].side != -1){
-	   fMovesPtr = getFeasibleMoves(board,i,idx);
+	   int num_moves = (int) numMoves[board[i].idx];
+           struct feasibleMoves *feasibleMoves = (struct feasibleMoves *) calloc(num_moves,sizeof(struct feasibleMove));
+	   fMovesPtr = getFeasibleMoves(board,feasibleMoves,i,idx);
+	   printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+	   printf("num_moves:\t%d\n",num_moves);
+	   printf("Number of feasibleMoves:\t%ld\n",sizeof(fMovesPtr->side0)/sizeof(fMovesPtr->side0[0]));
+	   printf("Number of feasibleMoves:\t%ld\n",sizeof(fMovesPtr->side1)/sizeof(fMovesPtr->side1[0]));
 	   printf("--------------------------- %s -------------------------------\n",board[i].name);
-	   for (int k=0; k<20; k++){
-           fMovePtr = (board[i].side == 0) ? fMovesPtr->side0[k] : fMovesPtr->side1[k];	 
-	   if (fMovePtr.currPos.row != fMovePtr.nextPos.row && fMovePtr.currPos.col != fMovePtr.nextPos.col)
+	   printf("numPieces:\t\t%d\n",num_moves);
+	   for (int k=0; k<4; k++){
+               fMovePtr = (board[i].side == 0) ? fMovesPtr->side0[k] : fMovesPtr->side1[k];	 
+	       printf("HAPPY PATH:\t{%d,%d}\t====>{%d,%d}\n",fMovePtr.currPos.row, fMovePtr.currPos.col, fMovePtr.nextPos.row, fMovePtr.nextPos.col);
 	       feasMove = (struct feasibleMove) {fMovePtr.currPos.row, fMovePtr.currPos.col, fMovePtr.nextPos.row, fMovePtr.nextPos.col};   
-	       //memcpy(allFeasibleMoves+k, &feasMove, sizeof(struct feasibleMove));
                feasMoves[k] = feasMove;
 	   }
-	   //printf("--------------------------------------------------------------------\n");
-           }
+	   
+	   memcpy(allFeasibleMoves,feasMoves,sizeof(feasMoves));
+           
        }
+    }
 
-    memcpy(allFeasibleMoves,feasMoves,20*sizeof(feasMoves));
+    //memcpy(allFeasibleMoves,feasMoves,sizeof(feasMoves));
 
     return allFeasibleMoves;
 }
@@ -243,16 +249,16 @@ int main()
     struct piece *board = initBoard();
     
     fMovePtr = getAllFeasibleMoves(board);
-
+    
     int numMoves = sizeof(*fMovePtr)/sizeof(struct feasibleMove);
     printf("there are: %d feasible moves available\n",numMoves);
 
-    for (int k=0; k<20; k++)
+    for (int k=0; k<MAX_MOVES; k++)
     {
         printf("move: %d\t{%d,%d} =====> {%d,%d}\n",k,fMovePtr->currPos.row, fMovePtr->currPos.col, fMovePtr->nextPos.row, fMovePtr->nextPos.col);
 	fMovePtr++;
     }
-    
+
     return 0;
     
 }
